@@ -1,8 +1,8 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
-const consoleTable = require("console-table");
+const cTable = require("console.table");
 // Enable access to .env variables
-const dotenv = require("dotenv");
+// const dotenv = require("dotenv");
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -98,7 +98,7 @@ const start = () => {
 					removeRole();
 					break;
 					
-				case "viewAllDepartments":
+				case "View All Departments":
 					viewAllDepartments();
 					break;
 					
@@ -118,7 +118,7 @@ const start = () => {
 					budgetByDepartment();
 					break;
 
-        case 'Exit':
+        case "Exit":
           connection.end();
           break;
 
@@ -128,4 +128,36 @@ const start = () => {
       }
     });
 };
+
+const viewAllEmployees = () => {
+    const query = "SELECT employee.id, employee.first_name, employee.last_name, role.title AS job_title, role.salary, CONCAT(manager.first_name ,' ', manager.last_name) AS Manager FROM employee LEFT JOIN role ON employee.role_id=role.id LEFT JOIN employee manager ON manager.id=employee.manager_id";
+    connection.query(query, (err, res) => {
+			if (err) throw err;
+			 // Log all results of the SELECT statement
+			 console.table(res);   
+			 start();
+		
+		});
+};
+
+const viewAllDepartments = () => {
+  connection.query("SELECT name FROM department ORDER BY name ASC", (err, res) => {
+    if (err) throw err;
+		 // Log all results of the SELECT statement
+		 console.table(res);   
+		 start();
+	
+  });
+};
+
+const viewAllRoles = () => {
+  connection.query("SELECT role.title AS job_title, department.name AS department_name, role.salary FROM role LEFT JOIN department ON role.department_id=department.id", (err, res) => {
+    if (err) throw err;
+		 // Log all results of the SELECT statement
+		 console.table(res);   
+		 start();
+	
+  });
+};
+
 
