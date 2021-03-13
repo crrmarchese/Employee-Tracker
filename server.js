@@ -1,6 +1,13 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
+const { restoreDefaultPrompts } = require("inquirer");
+const requiredQuestion = async (input) => {
+  if (input === "") {
+     return 'This question is required';
+  }
+  return true;
+};
 // Enable access to .env variables
 // const dotenv = require("dotenv");
 
@@ -62,29 +69,29 @@ const start = () => {
           viewEmployeesByDepartment();
           break;
 
-        case "View All Employees By Manager":
-          viewEmployeesByManager();
-          break;
+        // case "View All Employees By Manager":
+        //   viewEmployeesByManager();
+        //   break;
 
         case "Add Employee":
          addEmployee();
           break;
 
-        case "Remove Employee":
-          removeEmployee();
-          break; 
+        // case "Remove Employee":
+        //   removeEmployee();
+        //   break; 
 					
-				case "Update Employee":
-					updateEmployee();
-					break; 
+				// case "Update Employee":
+				// 	updateEmployee();
+				// 	break; 
 				
 				case "Update Employee Role":
 					updateEmployeeRole();
 					break;
 
-				case "Update Employee Manager":
-					updateEmployeeManager();
-					break;
+				// case "Update Employee Manager":
+				// 	updateEmployeeManager();
+				// 	break;
 				
 				case "View All Roles":
 					viewAllRoles();
@@ -94,9 +101,9 @@ const start = () => {
 					addRole();
 					break;
 						
-				case "Remove Role":
-					removeRole();
-					break;
+				// case "Remove Role":
+				// 	removeRole();
+				// 	break;
 					
 				case "View All Departments":
 					viewAllDepartments();
@@ -106,17 +113,17 @@ const start = () => {
 					addDepartment();
 					break;
 					
-				case "Update Department":
-					updateDepartment();
-					break;
+				// case "Update Department":
+				// 	updateDepartment();
+				// 	break;
 					
-				case "Remove Department":
-					removeDepartment();
-					break;
+				// case "Remove Department":
+				// 	removeDepartment();
+				// 	break;
 				
-				case "Budget By Department":
-					budgetByDepartment();
-					break;
+				// case "Budget By Department":
+				// 	budgetByDepartment();
+				// 	break;
 
         case "Exit":
           connection.end();
@@ -135,18 +142,27 @@ const viewAllEmployees = () => {
 			if (err) throw err;
 			 // Log all results of the SELECT statement
 			 console.table(res);   
-			 start();
-		
+			 start();		
+		});
+};
+
+
+const viewEmployeesByDepartment = () => {
+		const query = "";
+		connection.query(query, (err, res) => {
+			if (err) throw err;
+			// Log all results of the SELECT statement
+			console.table(res);   
+			start();	
 		});
 };
 
 const viewAllDepartments = () => {
-  connection.query("SELECT name FROM department ORDER BY name ASC", (err, res) => {
+  connection.query("SELECT name AS department_name FROM department ORDER BY name ASC", (err, res) => {
     if (err) throw err;
 		 // Log all results of the SELECT statement
 		 console.table(res);   
-		 start();
-	
+		 start();	
   });
 };
 
@@ -155,9 +171,84 @@ const viewAllRoles = () => {
     if (err) throw err;
 		 // Log all results of the SELECT statement
 		 console.table(res);   
-		 start();
-	
+		 start();	
   });
 };
+
+
+const addEmployee = () => {
+  const employeeDBQuery = "SELECT employee.id, employee.first_name, employee.last_name, employee.role_id, role.title, department.name, role.salary, employee.manager_id FROM employee INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id";
+  connection.query(employeeDBQuery, (err, res) => {
+    if (err) throw err;
+    inquirer.prompt([
+      {
+        type: "input",
+        name: "first_name",
+        message: "What is the employee's first name?"
+      }, {
+        type: "input",
+        name: "last_name",
+        message: "What is the employee's last name?"
+      }, {
+        type: "list",
+        name: "role",
+        message: "What is the employee's role?",
+        choices: res.map(role => {
+          return { name: role.title, value: role.role_id }
+        })
+      }, {
+        type: "input",
+        name: "managerId",
+        message: "Who is the employee's manager?"
+      }])
+      .then(answer => {
+        console.log(answer);
+        connection.query(
+          "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)",
+          [answer.first_name, answer.last_name, answer.role, answer.managerId],
+          function (err) {
+            if (err) throw err
+            console.log(`${answer.first_name} ${answer.last_name} added as a new employee`)
+            start();
+          })
+      })
+  })
+}
+
+const addDepartment = () => {
+
+}
+
+const addRole = () => {
+    inquirer
+    .prompt({
+      type: 'input',
+      name: 'new_role',
+      message: 'What new role would you like to add?',
+    }, {
+      type: 'input',
+      name: 'salary',
+      message: 'What is the salary for this position?',
+    }, {
+    })
+    .then((answer) => {
+
+      console.log('Adding a new role...\n');
+      const query = connection.query(
+        'INSERT INTO role SET ?',
+        { // This is the SET
+          title: answer.title,
+          salary: answer.salary,
+          department_id: department.id,//not working
+        },
+        (err, res) => {
+          if (err) throw err;
+          console.log(err);
+        }
+      );
+
+    });
+
+}
 
 
