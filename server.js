@@ -1,7 +1,6 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
-const { restoreDefaultPrompts } = require("inquirer");
 const requiredQuestion = async (input) => {
   if (input === "") {
      return 'This question is required';
@@ -9,20 +8,21 @@ const requiredQuestion = async (input) => {
   return true;
 };
 // Enable access to .env variables
-// const dotenv = require("dotenv");
+const dotenv = require("dotenv");
+dotenv.config();
 
 const connection = mysql.createConnection({
-  host: "localhost",
+  host: process.env.DB_HOST,
 
   // Your port; if not 3306
   port: 3306,
 
   // Your username
-  user: "root",
+  user: process.env.DB_USER,
 
   // Your password
-  password: "root",
-  database: "employees_db",
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
 });
 
 
@@ -35,63 +35,36 @@ connection.connect((err) => {
 
 const start = () => {
   inquirer
-    .prompt({
+    .prompt([
+      {
       name: "action",
       type: "list",
       message: "What would you like to do?",
       choices: [
         "View All Employees",
-        "View All Employees By Department",
-        "View All Employees By Manager",
         "Add Employee",
-        "Remove Employee",
-        "Update Employee",
         "Update Employee Role",
-        "Update Employee Manager",
         "View All Roles",
         "Add Role",
-        "Remove Role",
         "View All Departments",
         "Add Department",
-				"Update Department",
-				"Remove Department",
-				"Budget by Department",
         "Exit",      
       ],
-    })
+    },
+  ])
     .then((answer) => {
       switch (answer.action) {
         case "View All Employees":
           viewAllEmployees();
           break;
 
-        case "View All Employees By Department":
-          viewEmployeesByDepartment();
-          break;
-
-        // case "View All Employees By Manager":
-        //   viewEmployeesByManager();
-        //   break;
-
         case "Add Employee":
          addEmployee();
           break;
 
-        // case "Remove Employee":
-        //   removeEmployee();
-        //   break; 
-					
-				// case "Update Employee":
-				// 	updateEmployee();
-				// 	break; 
-				
 				case "Update Employee Role":
 					updateEmployeeRole();
 					break;
-
-				// case "Update Employee Manager":
-				// 	updateEmployeeManager();
-				// 	break;
 				
 				case "View All Roles":
 					viewAllRoles();
@@ -100,11 +73,7 @@ const start = () => {
 				case "Add Role":
 					addRole();
 					break;
-						
-				// case "Remove Role":
-				// 	removeRole();
-				// 	break;
-					
+									
 				case "View All Departments":
 					viewAllDepartments();
 					break;
@@ -113,18 +82,6 @@ const start = () => {
 					addDepartment();
 					break;
 					
-				// case "Update Department":
-				// 	updateDepartment();
-				// 	break;
-					
-				// case "Remove Department":
-				// 	removeDepartment();
-				// 	break;
-				
-				// case "Budget By Department":
-				// 	budgetByDepartment();
-				// 	break;
-
         case "Exit":
           connection.end();
           break;
@@ -146,16 +103,6 @@ const viewAllEmployees = () => {
 		});
 };
 
-
-const viewEmployeesByDepartment = () => {
-		const query = "";
-		connection.query(query, (err, res) => {
-			if (err) throw err;
-			// Log all results of the SELECT statement
-			console.table(res);   
-			start();	
-		});
-};
 
 const viewAllDepartments = () => {
   connection.query("SELECT name AS department_name FROM department ORDER BY name ASC", (err, res) => {
@@ -185,27 +132,31 @@ const addEmployee = () => {
         type: "input",
         name: "first_name",
         message: "What is the employee's first name?"
-      }, {
+      }, 
+      {
         type: "input",
         name: "last_name",
         message: "What is the employee's last name?"
-      }, {
+      }, 
+      {
         type: "list",
         name: "role",
         message: "What is the employee's role?",
         choices: res.map(role => {
           return { name: role.title, value: role.role_id }
         })
-      }, {
+      }, 
+      {
         type: "input",
         name: "managerId",
         message: "Who is the employee's manager?"
-      }])
+      },
+    ])
       .then(answer => {
         console.log(answer);
         connection.query(
           "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)",
-          [answer.first_name, answer.last_name, answer.role, answer.managerId],
+        [answer.first_name, answer.last_name, answer.role, answer.managerId],
           function (err) {
             if (err) throw err
             console.log(`${answer.first_name} ${answer.last_name} added as a new employee`)
@@ -215,39 +166,112 @@ const addEmployee = () => {
   })
 }
 
+
 const addDepartment = () => {
+  console.log("Adding a new department...\n");
+
+  connection.query("SELECT * FROM department", (err, res) => {
+    if (err) throw err;
+    inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "new_department",
+        message: "What new department would you like to add?",
+      },
+    ])
+    .then((answer) => {
+      const query = "INSERT INTO department (name) VALUES (?)";
+      connection.query(query, (err, res) => {
+        if (err) throw err;
+        console.log(`${answer.new_department} added as new department`)
+        start();
+      });
+    });
+  });
+}
+
+
+
+const addRole = () => { 
+ 
+  console.log("Adding a new role...\n");
+  connection.query("SELECT * FROM role", (err, res) => {
+    if (err) throw err
+    inquirer
+      .prompt([
+        {
+          type: "input",
+          name: "new_role",
+          message: "What new role would you like to add?",
+        },
+        {
+          type: "input",
+          name: "salary",
+          message: "What is the salary for this position?",
+        }, 
+        {
+          type: "number",
+          name: "deptId",
+          message: "What is the department ID for this role?",
+        },
+      ])
+      .then((answer) => {
+        
+        connection.query(
+          'INSERT INTO role SET ?',
+          { // This is the SET
+            title: answer.new_role,
+            salary: answer.salary,
+            department_id: answer.deptId,
+          },
+          (err, res) => {
+            if (err) throw err;
+            console.log(`The role of: ${answer.new_role} was created`);
+            start();
+          }
+        );
+  
+      });
+
+
+  })
 
 }
 
-const addRole = () => {
+const updateEmployeeRole = () => {
+
+  console.log('Updating employee role...\n');
+  
+  const query ="SELECT employee.id, employee.first_name, employee.last_name, employee.role_id, role.title, department.name, role.salary, employee.manager_id FROM employee INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id";
+  connection.query(query, (err, res) => {
+    if (err) throw err
     inquirer
-    .prompt({
-      type: 'input',
-      name: 'new_role',
-      message: 'What new role would you like to add?',
-    }, {
-      type: 'input',
-      name: 'salary',
-      message: 'What is the salary for this position?',
-    }, {
-    })
+      .prompt([
+        {
+          type: "input",
+          name: "role_id",
+          message: "Which employee's role id would you like to update?",
+      },
+    
+    ])
     .then((answer) => {
 
-      console.log('Adding a new role...\n');
-      const query = connection.query(
-        'INSERT INTO role SET ?',
+      connection.query(
+        "UPDATE employee INNER JOIN role ON employees.role_id = role.id SET role.id = ? WHERE employee.id = ?",
         { // This is the SET
-          title: answer.title,
-          salary: answer.salary,
-          department_id: department.id,//not working
+          role: answer.role_id,
         },
         (err, res) => {
           if (err) throw err;
-          console.log(err);
+          console.log(`The role of: ${answer.role_id} was updated`);
+          start();
         }
       );
-
-    });
+    
+    })  
+   
+  });
 
 }
 
