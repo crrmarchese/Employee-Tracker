@@ -258,7 +258,7 @@ const updateEmployeeRole = () => {
     .then((answer) => {
 
       connection.query(
-        "UPDATE employee INNER JOIN role ON employees.role_id = role.id SET role.id = ? WHERE employee.id = ?",
+        "UPDATE employee INNER JOIN, role ON employees.role_id = role.id SET role.id = ? WHERE employee.id = ?",
         { // This is the SET
           role: answer.role_id,
         },
