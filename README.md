@@ -11,9 +11,9 @@ Employee Tracker is a command line application used to view the departments, rol
 5. Run `npm start` to start the application and answer the questions.
 
 
-## Usage
+## Screenshot
 
-[Video](https://1drv.ms/v/s!AtT3DKFm4NiYhAt6f8_hPsdFzJ4_?e=LuGYEq)<br />
+![Employee Tracker](assets/images/screenshot-employee-tracker.jpg)<br />
 
 ## Technologies
 * [Node.js](https://nodejs.org/en/)
